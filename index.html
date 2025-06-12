@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Flight Route Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Leaflet CSS from CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f7fa;
+    }
+    #header {
+      background: #1a73e8;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    #container {
+      display: flex;
+      height: calc(100vh - 60px);
+    }
+    #sidebar {
+      width: 300px;
+      background: #fff;
+      padding: 1rem;
+      overflow-y: auto;
+      border-right: 1px solid #ccc;
+    }
+    #map {
+      flex-grow: 1;
+    }
+    select, button {
+      margin: 0.5rem 0;
+      width: 100%;
+      padding: 0.5rem;
+    }
+    .metric {
+      margin: 1rem 0;
+      padding: 0.5rem;
+      background: #e3f2fd;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div id="header">🌍 Multi-City Flight Route Dashboard</div>
+  <div id="container">
+    <div id="sidebar">
+      <label for="routeSelect">Choose a route:</label>
+      <select id="routeSelect"></select>
+      <div id="metrics" class="metric">Total Fare: -<br>Visa Stops: -</div>
+    </div>
+    <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([30, 20], 2.4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    const airportCoords = {
+      "JFK": [40.6413, -73.7781],
+      "YYZ": [43.6777, -79.6248],
+      "YUL": [45.4577, -73.7499],
+      "ORD": [41.9742, -87.9073],
+      "DEL": [28.5562, 77.1000],
+      "BOM": [19.0896, 72.8656],
+      "LCA": [34.8751, 33.6249],
+      "AMM": [31.7226, 35.9932],
+      "BAH": [26.2708, 50.6336],
+      "MCT": [23.5933, 58.2844]
+    };
+
+    const routes = {
+      "Option 1": [
+        { from: "JFK", to: "LCA", airline: "Emirates", flight: "EK210", date: "2025-12-15" },
+        { from: "LCA", to: "AMM", airline: "RJ", flight: "RJ102", date: "2025-12-17" },
+        { from: "AMM", to: "BAH", airline: "GF", flight: "GF131", date: "2025-12-22" },
+        { from: "BAH", to: "MCT", airline: "WY", flight: "WY612", date: "2025-12-23" },
+        { from: "MCT", to: "DEL", airline: "AI", flight: "AI974", date: "2025-12-26" }
+      ]
+    };
+
+    const routeColors = {
+      "Option 1": "#1a73e8"
+    };
+
+    const routeSelect = document.getElementById("routeSelect");
+    for (const route in routes) {
+      const opt = document.createElement("option");
+      opt.value = route;
+      opt.textContent = route;
+      routeSelect.appendChild(opt);
+    }
+
+    let routeLayer = null;
+
+    function drawRoute(routeKey) {
+      if (routeLayer) map.removeLayer(routeLayer);
+      const legs = routes[routeKey];
+      const polylines = legs.map(leg => {
+        const from = airportCoords[leg.from];
+        const to = airportCoords[leg.to];
+        return L.polyline([from, to], {
+          color: routeColors[routeKey],
+          weight: 4
+        }).bindTooltip(`${leg.from} → ${leg.to}<br>${leg.airline} ${leg.flight}<br>${leg.date}`);
+      });
+      routeLayer = L.layerGroup(polylines).addTo(map);
+
+      // Update metrics
+      const totalFare = "$1420 CAD";
+      const visaStops = "2 (Jordan, Oman)";
+      document.getElementById("metrics").innerHTML = `Total Fare: ${totalFare}<br>Visa Stops: ${visaStops}`;
+    }
+
+    routeSelect.addEventListener("change", e => drawRoute(e.target.value));
+    drawRoute("Option 1");
+  </script>
+</body>
+</html>
